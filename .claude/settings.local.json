@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -L \"https://stitch.base44.app/api/projects/8870660596225038935\" -H \"Accept: application/json\")",
+      "Bash(curl -s -L \"https://stitch.base44.app/api/screens/bbc899677d504336b16cbbe3a0384299\" -H \"Accept: application/json\")",
+      "Bash(curl -s -L \"https://claude.stitch.base44.com/api/projects/8870660596225038935/screens/bbc899677d504336b16cbbe3a0384299\")",
+      "Bash(curl -s -L \"https://app.base44.com/api/stitch/projects/8870660596225038935\" -H \"Accept: application/json\")",
+      "Bash(curl -s -L \"https://app.base44.com/stitch/8870660596225038935\")",
+      "Bash(curl -s -L \"https://media.base44.com/stitch/8870660596225038935/screens/bbc899677d504336b16cbbe3a0384299.png\" -o /tmp/home_screen.png -w \"%{http_code}\")",
+      "Bash(curl -s -L \"https://api.base44.com/api/stitch/projects/8870660596225038935/screens/bbc899677d504336b16cbbe3a0384299\" -H \"Accept: application/json\")",
+      "Bash(curl -s -L \"https://api.base44.com/api/stitch/projects/8870660596225038935\" -H \"Accept: application/json\")",
+      "Bash(curl -s \"https://claude.ai/api/stitch/projects/8870660596225038935/screens/bbc899677d504336b16cbbe3a0384299\" -H \"Accept: application/json\")",
+      "Bash(curl -s \"https://claude.ai/api/stitch/projects/8870660596225038935\" -H \"Accept: application/json\")",
+      "Bash(npm run *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\aronv\\\\tdf-chiro\" -Recurse)",
+      "Bash(Select-Object FullName)",
+      "Bash(ConvertTo-Csv -NoTypeInformation)",
+      "Bash(Out-String)",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
+    ]
+  }
+}

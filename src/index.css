@@ -1,0 +1,174 @@
+@import "tailwindcss";
+
+@theme {
+  --font-bebas: "Bebas Neue", cursive;
+  --font-barlow-condensed: "Barlow Condensed", sans-serif;
+  --font-barlow: "Barlow", sans-serif;
+
+  --color-yellow:  #FFD600;
+  --color-gold:    #F5A623;
+  --color-muted:   #8892A4;
+  --color-line:    #2A2D3E;
+  --color-card:    #1C1E2A;
+  --color-card-2:  #22253A;
+  --color-page:    #12131A;
+
+  /* compat */
+  --color-neon:    #FFD600;
+  --color-cyan:    #00D4FF;
+  --color-void:    #12131A;
+  --color-surface: #1C1E2A;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: "Barlow", sans-serif;
+  background-color: #12131A;
+  background-image: radial-gradient(circle, #2A2D3E 1px, transparent 1px);
+  background-size: 20px 20px;
+  color: #e5e7eb;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Cards ────────────────────────────────────────────────── */
+.card {
+  background: #1C1E2A;
+  border: 1px solid #2A2D3E;
+  border-radius: 12px;
+}
+.card-elevated {
+  background: #22253A;
+  border: 1px solid #2A2D3E;
+  border-radius: 12px;
+}
+.card-cyber {
+  background: #1C1E2A;
+  border: 1px solid #2A2D3E;
+  transition: border-color 0.2s;
+}
+.card-cyber:hover { border-color: rgba(255,214,0,0.35); }
+
+/* ── Buttons ──────────────────────────────────────────────── */
+.btn-primary {
+  background: #FFD600;
+  color: #000000;
+  font-family: "Barlow Condensed", sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-primary:hover { background: #ffe033; }
+.btn-primary:active { transform: scale(0.98); }
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid #2A2D3E;
+  color: #ffffff;
+  font-family: "Barlow Condensed", sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-ghost:hover { border-color: #FFD600; color: #FFD600; }
+
+.btn-danger {
+  background: transparent;
+  border: 1px solid rgba(239,68,68,0.4);
+  color: #EF4444;
+  font-family: "Barlow Condensed", sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-danger:hover { background: rgba(239,68,68,0.1); }
+
+.btn-cyber {
+  background: transparent;
+  border: 1px solid rgba(255,214,0,0.5);
+  color: #FFD600;
+  font-family: "Barlow Condensed", sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  transition: all 0.15s;
+}
+.btn-cyber:hover { background: rgba(255,214,0,0.08); border-color: #FFD600; }
+
+/* ── Inputs ───────────────────────────────────────────────── */
+.input-field, .input-cyber {
+  background: #12131A;
+  border: 1px solid #2A2D3E;
+  color: #ffffff;
+  font-family: "Barlow", sans-serif;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+.input-field:focus, .input-cyber:focus { border-color: #FFD600; }
+.input-field::placeholder, .input-cyber::placeholder { color: #8892A4; }
+.input-field option, .input-cyber option { background: #1C1E2A; }
+
+/* ── Badge ────────────────────────────────────────────────── */
+.badge {
+  font-family: "Barlow Condensed", sans-serif;
+  font-weight: 600;
+  border-radius: 4px;
+  padding: 2px 8px;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+}
+
+/* ── Spin slow ────────────────────────────────────────────── */
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+.spin-slow { animation: spin-slow 3s linear infinite; }
+
+/* ── Page fade-in ─────────────────────────────────────────── */
+@keyframes pageFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page-enter {
+  animation: pageFadeIn 0.4s ease-out both;
+}
+
+/* ── Compat stubs (no glows) ──────────────────────────────── */
+.neon-text {}
+.neon-text-sm {}
+.neon-text-gold {}
+.neon-text-cyan {}
+.neon-box {}
+.neon-box-hover:hover {}
+.neon-box-strong {}
+.neon-box-cyan {}
+.grid-bg {}
