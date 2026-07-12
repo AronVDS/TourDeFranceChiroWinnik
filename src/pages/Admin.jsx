@@ -88,44 +88,90 @@ function FormPanel({ title, onClose, children }) {
   )
 }
 
+/* ── Speler pill met geslacht-badge ──────────────────────────── */
+function geslachtIcon(waarde) {
+  return waarde === 'jongen' ? '🧑' : waarde === 'meisje' ? '👧' : '❓'
+}
+
+function SpelerPill({ naam, geslacht, accentCls, onSetGeslacht, onRemove, isOpen, onToggleOpen }) {
+  return (
+    <span className={`relative flex items-center gap-1 ${accentCls} text-xs font-barlow-condensed font-semibold px-2.5 py-1.5 rounded-full`}>
+      <button
+        type="button"
+        onClick={onToggleOpen}
+        title="Geslacht instellen"
+        className={!geslacht ? 'animate-pulse' : ''}
+      >
+        {geslachtIcon(geslacht)}
+      </button>
+      {naam}
+      <button onClick={onRemove} className="hover:text-red-400 transition-colors ml-0.5"><X className="w-3 h-3" /></button>
+      {isOpen && (
+        <div className="absolute top-full left-0 mt-1 z-10 flex gap-1 bg-card-2 border border-line rounded-lg p-1.5 shadow-lg">
+          <button type="button" onClick={() => onSetGeslacht('jongen')} className="px-2 py-1 rounded text-[10px] text-white hover:bg-yellow/10 whitespace-nowrap">🧑 Jongen</button>
+          <button type="button" onClick={() => onSetGeslacht('meisje')} className="px-2 py-1 rounded text-[10px] text-white hover:bg-yellow/10 whitespace-nowrap">👧 Meisje</button>
+        </div>
+      )}
+    </span>
+  )
+}
+
 /* ── Teams tab ──────────────────────────────────────────────── */
 function TeamsTab() {
   const { teams, addTeam, updateTeam, deleteTeam } = useApp()
   const [editing, setEditing] = useState(null)
-  const [form, setForm] = useState({ naam: '', kleur: '#FFD600', leiding: [], aspis: [] })
+  const [form, setForm] = useState({ naam: '', kleur: '#FFD600', leiding: [], aspis: [], geslacht: {} })
   const [leidingInput, setLeidingInput] = useState('')
   const [aspiInput, setAspiInput] = useState('')
+  const [leidingGeslacht, setLeidingGeslacht] = useState(null)
+  const [aspiGeslacht, setAspiGeslacht] = useState(null)
+  const [editingGeslachtFor, setEditingGeslachtFor] = useState(null)
 
   const startNew = () => {
     setEditing('new')
-    setForm({ naam: '', kleur: '#FFD600', leiding: [], aspis: [] })
+    setForm({ naam: '', kleur: '#FFD600', leiding: [], aspis: [], geslacht: {} })
     setLeidingInput(''); setAspiInput('')
+    setLeidingGeslacht(null); setAspiGeslacht(null); setEditingGeslachtFor(null)
   }
   const startEdit = (t) => {
     setEditing(t.id)
-    setForm({ naam: t.naam, kleur: t.kleur, leiding: t.leden?.leiding ?? [], aspis: t.leden?.aspis ?? [] })
+    setForm({ naam: t.naam, kleur: t.kleur, leiding: t.leden?.leiding ?? [], aspis: t.leden?.aspis ?? [], geslacht: t.leden?.geslacht ?? {} })
     setLeidingInput(''); setAspiInput('')
+    setLeidingGeslacht(null); setAspiGeslacht(null); setEditingGeslachtFor(null)
   }
 
   const addLeiding = () => {
     const naam = leidingInput.trim()
-    if (!naam || form.leiding.includes(naam)) return
-    setForm(p => ({ ...p, leiding: [...p.leiding, naam] }))
+    if (!naam || form.leiding.includes(naam) || !leidingGeslacht) return
+    setForm(p => ({ ...p, leiding: [...p.leiding, naam], geslacht: { ...p.geslacht, [naam]: leidingGeslacht } }))
     setLeidingInput('')
+    setLeidingGeslacht(null)
   }
-  const removeLeiding = (naam) => setForm(p => ({ ...p, leiding: p.leiding.filter(n => n !== naam) }))
+  const removeLeiding = (naam) => setForm(p => {
+    const { [naam]: _, ...restGeslacht } = p.geslacht
+    return { ...p, leiding: p.leiding.filter(n => n !== naam), geslacht: restGeslacht }
+  })
 
   const addAspi = () => {
     const naam = aspiInput.trim()
-    if (!naam || form.aspis.includes(naam)) return
-    setForm(p => ({ ...p, aspis: [...p.aspis, naam] }))
+    if (!naam || form.aspis.includes(naam) || !aspiGeslacht) return
+    setForm(p => ({ ...p, aspis: [...p.aspis, naam], geslacht: { ...p.geslacht, [naam]: aspiGeslacht } }))
     setAspiInput('')
+    setAspiGeslacht(null)
   }
-  const removeAspi = (naam) => setForm(p => ({ ...p, aspis: p.aspis.filter(n => n !== naam) }))
+  const removeAspi = (naam) => setForm(p => {
+    const { [naam]: _, ...restGeslacht } = p.geslacht
+    return { ...p, aspis: p.aspis.filter(n => n !== naam), geslacht: restGeslacht }
+  })
+
+  const setGeslacht = (naam, waarde) => {
+    setForm(p => ({ ...p, geslacht: { ...p.geslacht, [naam]: waarde } }))
+    setEditingGeslachtFor(null)
+  }
 
   const save = () => {
     if (!form.naam.trim()) return
-    const leden = { leiding: form.leiding, aspis: form.aspis }
+    const leden = { leiding: form.leiding, aspis: form.aspis, geslacht: form.geslacht }
     if (editing === 'new') addTeam({ naam: form.naam.trim(), kleur: form.kleur, leden })
     else updateTeam(editing, { naam: form.naam.trim(), kleur: form.kleur, leden })
     setEditing(null)
@@ -164,15 +210,31 @@ function TeamsTab() {
                   placeholder="Naam toevoegen..."
                   className={inputCls}
                 />
-                <button onClick={addLeiding} className="btn-primary px-3 rounded-lg shrink-0"><Plus className="w-4 h-4" /></button>
+                <div className="flex gap-1 shrink-0">
+                  <button type="button" onClick={() => setLeidingGeslacht('jongen')}
+                    className={`px-2.5 rounded-lg border text-xs font-barlow-condensed font-bold transition-colors ${leidingGeslacht === 'jongen' ? 'bg-yellow text-black border-yellow' : 'bg-card-2 text-muted border-line hover:border-yellow/40'}`}>
+                    🧑
+                  </button>
+                  <button type="button" onClick={() => setLeidingGeslacht('meisje')}
+                    className={`px-2.5 rounded-lg border text-xs font-barlow-condensed font-bold transition-colors ${leidingGeslacht === 'meisje' ? 'bg-yellow text-black border-yellow' : 'bg-card-2 text-muted border-line hover:border-yellow/40'}`}>
+                    👧
+                  </button>
+                </div>
+                <button onClick={addLeiding} disabled={!leidingInput.trim() || !leidingGeslacht} className="btn-primary px-3 rounded-lg shrink-0 disabled:opacity-30 disabled:cursor-not-allowed"><Plus className="w-4 h-4" /></button>
               </div>
               {form.leiding.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                   {form.leiding.map(naam => (
-                    <span key={naam} className="flex items-center gap-1 bg-yellow/10 border border-yellow/30 text-yellow text-xs font-barlow-condensed font-semibold px-2.5 py-1.5 rounded-full">
-                      {naam}
-                      <button onClick={() => removeLeiding(naam)} className="hover:text-red-400 transition-colors ml-0.5"><X className="w-3 h-3" /></button>
-                    </span>
+                    <SpelerPill
+                      key={naam}
+                      naam={naam}
+                      geslacht={form.geslacht[naam]}
+                      accentCls="bg-yellow/10 border border-yellow/30 text-yellow"
+                      onSetGeslacht={(w) => setGeslacht(naam, w)}
+                      onRemove={() => removeLeiding(naam)}
+                      isOpen={editingGeslachtFor === naam}
+                      onToggleOpen={() => setEditingGeslachtFor(editingGeslachtFor === naam ? null : naam)}
+                    />
                   ))}
                 </div>
               )}
@@ -189,15 +251,31 @@ function TeamsTab() {
                   placeholder="Naam toevoegen..."
                   className={inputCls}
                 />
-                <button onClick={addAspi} className="btn-primary px-3 rounded-lg shrink-0"><Plus className="w-4 h-4" /></button>
+                <div className="flex gap-1 shrink-0">
+                  <button type="button" onClick={() => setAspiGeslacht('jongen')}
+                    className={`px-2.5 rounded-lg border text-xs font-barlow-condensed font-bold transition-colors ${aspiGeslacht === 'jongen' ? 'bg-yellow text-black border-yellow' : 'bg-card-2 text-muted border-line hover:border-yellow/40'}`}>
+                    🧑
+                  </button>
+                  <button type="button" onClick={() => setAspiGeslacht('meisje')}
+                    className={`px-2.5 rounded-lg border text-xs font-barlow-condensed font-bold transition-colors ${aspiGeslacht === 'meisje' ? 'bg-yellow text-black border-yellow' : 'bg-card-2 text-muted border-line hover:border-yellow/40'}`}>
+                    👧
+                  </button>
+                </div>
+                <button onClick={addAspi} disabled={!aspiInput.trim() || !aspiGeslacht} className="btn-primary px-3 rounded-lg shrink-0 disabled:opacity-30 disabled:cursor-not-allowed"><Plus className="w-4 h-4" /></button>
               </div>
               {form.aspis.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                   {form.aspis.map(naam => (
-                    <span key={naam} className="flex items-center gap-1 bg-card-2 border border-line text-muted text-xs font-barlow-condensed font-semibold px-2.5 py-1.5 rounded-full">
-                      {naam}
-                      <button onClick={() => removeAspi(naam)} className="hover:text-red-400 transition-colors ml-0.5"><X className="w-3 h-3" /></button>
-                    </span>
+                    <SpelerPill
+                      key={naam}
+                      naam={naam}
+                      geslacht={form.geslacht[naam]}
+                      accentCls="bg-card-2 border border-line text-muted"
+                      onSetGeslacht={(w) => setGeslacht(naam, w)}
+                      onRemove={() => removeAspi(naam)}
+                      isOpen={editingGeslachtFor === naam}
+                      onToggleOpen={() => setEditingGeslachtFor(editingGeslachtFor === naam ? null : naam)}
+                    />
                   ))}
                 </div>
               )}
