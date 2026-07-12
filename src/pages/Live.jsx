@@ -8,9 +8,9 @@ import { berekenAllSpelerStats } from '../utils/mvp'
 
 /* ── Helpers ─────────────────────────────────────────────────── */
 function migrateLeden(leden) {
-  if (!leden) return { leiding: [], aspis: [] }
-  if (Array.isArray(leden)) return { leiding: [], aspis: leden }
-  return { leiding: leden.leiding ?? [], aspis: leden.aspis ?? [] }
+  if (!leden) return { leiding: [], aspis: [], geslacht: {} }
+  if (Array.isArray(leden)) return { leiding: [], aspis: leden, geslacht: {} }
+  return { leiding: leden.leiding ?? [], aspis: leden.aspis ?? [], geslacht: leden.geslacht ?? {} }
 }
 
 function parseTeams(raw) {

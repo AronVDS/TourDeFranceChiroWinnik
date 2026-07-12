@@ -1,7 +1,7 @@
 function normalizeLeden(leden) {
-  if (!leden) return { leiding: [], aspis: [] }
-  if (Array.isArray(leden)) return { leiding: [], aspis: leden }
-  return { leiding: leden.leiding ?? [], aspis: leden.aspis ?? [] }
+  if (!leden) return { leiding: [], aspis: [], geslacht: {} }
+  if (Array.isArray(leden)) return { leiding: [], aspis: leden, geslacht: {} }
+  return { leiding: leden.leiding ?? [], aspis: leden.aspis ?? [], geslacht: leden.geslacht ?? {} }
 }
 
 export function berekenSpelerStats(speler, team, challenges = []) {
@@ -18,7 +18,7 @@ export function berekenSpelerStats(speler, team, challenges = []) {
     }
   }
 
-  const { leiding } = normalizeLeden(team.leden)
+  const { leiding, geslacht } = normalizeLeden(team.leden)
   const rol = leiding.includes(speler) ? 'leiding' : 'aspi'
 
   return {
@@ -27,6 +27,7 @@ export function berekenSpelerStats(speler, team, challenges = []) {
     team_naam: team.naam ?? '',
     team_kleur: team.kleur ?? '#888',
     rol,
+    geslacht: geslacht?.[speler] ?? null,
     challenges_gespeeld,
     punten_bijgedragen,
     mvp_score: punten_bijgedragen,

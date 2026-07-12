@@ -10,11 +10,11 @@ const SEED_TEAMS = [
   { id: 4, naam: 'Team Groen', kleur: '#22C55E', leden: { leiding: ['Julie'], aspis: ['Tom', 'Noor'] },   total_points: 0, mountain_points: 0, sprint_points: 0, junioren_points: 0, quiz_points: 0, stage1_points: 0, stage2_points: 0, stage3_points: 0, bonus_points: 0, penalty_points: 0 },
 ]
 
-/* Migrate old flat-array leden to { leiding, aspis } */
+/* Migrate old flat-array leden to { leiding, aspis, geslacht } */
 function migrateLeden(leden) {
-  if (!leden) return { leiding: [], aspis: [] }
-  if (Array.isArray(leden)) return { leiding: [], aspis: leden }
-  return leden
+  if (!leden) return { leiding: [], aspis: [], geslacht: {} }
+  if (Array.isArray(leden)) return { leiding: [], aspis: leden, geslacht: {} }
+  return { leiding: leden.leiding ?? [], aspis: leden.aspis ?? [], geslacht: leden.geslacht ?? {} }
 }
 
 const SEED_CONFIG = {
