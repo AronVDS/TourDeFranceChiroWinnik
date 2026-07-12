@@ -773,7 +773,7 @@ function ConfigTab() {
         </div>
         <div>
           <label className={labelCls}>Punten per quizvraag</label>
-          <input type="number" min="0" value={form.quiz_points_per_question} onChange={e => setForm(p => ({ ...p, quiz_points_per_question: parseInt(e.target.value) || 0 }))} className={inputCls} />
+          <input type="number" min="0" value={form.quiz_points_per_question} onChange={e => setForm(p => ({ ...p, quiz_points_per_question: Math.max(0, parseInt(e.target.value) || 0) }))} className={inputCls} />
         </div>
         <button onClick={save}
           className={`w-full font-bebas text-xl py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 border ${
