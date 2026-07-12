@@ -1,9 +1,10 @@
-export function recalculateAllPoints(teams, challenges, bonusPenalties) {
+export function recalculateAllPoints(teams, challenges, bonusPenalties, quiz = {}, pointsPerQuestion = 0) {
   return teams.map(team => {
     let total_points = 0
     let mountain_points = 0
     let sprint_points = 0
     let junioren_points = 0
+    let quiz_points = 0
     let stage1_points = 0
     let stage2_points = 0
     let stage3_points = 0
@@ -33,12 +34,22 @@ export function recalculateAllPoints(teams, challenges, bonusPenalties) {
       }
     })
 
+    Object.values(quiz ?? {}).forEach(stageQuestions => {
+      (stageQuestions ?? []).forEach(q => {
+        if (q?.antwoorden?.[String(team.id)]) {
+          quiz_points += pointsPerQuestion
+          total_points += pointsPerQuestion
+        }
+      })
+    })
+
     return {
       ...team,
       total_points,
       mountain_points,
       sprint_points,
       junioren_points,
+      quiz_points,
       stage1_points,
       stage2_points,
       stage3_points,
