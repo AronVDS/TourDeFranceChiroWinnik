@@ -138,7 +138,11 @@ export function AppProvider({ children }) {
     setTeams(recalculateAllPoints(teams, challenges, updated, quiz, config.quiz_points_per_question))
   }
 
-  const updateConfig = (updates) => setConfig(prev => ({ ...prev, ...updates }))
+  const updateConfig = (updates) => {
+    const newConfig = { ...config, ...updates }
+    setConfig(newConfig)
+    setTeams(recalculateAllPoints(teams, challenges, bonusPenalties, quiz, newConfig.quiz_points_per_question))
+  }
 
   const recalculateAll = () => setTeams(recalculateAllPoints(teams, challenges, bonusPenalties, quiz, config.quiz_points_per_question))
 
