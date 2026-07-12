@@ -123,22 +123,23 @@ function TimerOverlay() {
 }
 
 /* ── Quiz overlay ────────────────────────────────────────────── */
+function readQuizState() {
+  const activeState = parseActiveQuiz(localStorage.getItem('tdf_quiz_active'))
+  if (!activeState) return { active: null, question: null }
+  const quiz = parseQuiz(localStorage.getItem('tdf_quiz'))
+  const q = quiz?.[activeState.stage]?.[activeState.questionIndex] ?? null
+  return { active: activeState, question: q }
+}
+
 function QuizOverlay() {
-  const [active, setActive] = useState(null)
-  const [question, setQuestion] = useState(null)
+  const [state, setState] = useState(() => readQuizState())
 
   useEffect(() => {
-    const tick = setInterval(() => {
-      const activeState = parseActiveQuiz(localStorage.getItem('tdf_quiz_active'))
-      setActive(activeState)
-      if (!activeState) { setQuestion(null); return }
-      const quiz = parseQuiz(localStorage.getItem('tdf_quiz'))
-      const q = quiz?.[activeState.stage]?.[activeState.questionIndex] ?? null
-      setQuestion(q)
-    }, 1000)
+    const tick = setInterval(() => setState(readQuizState()), 1000)
     return () => clearInterval(tick)
   }, [])
 
+  const { active, question } = state
   if (!active || !question) return null
 
   return (
