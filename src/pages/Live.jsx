@@ -28,6 +28,19 @@ function parseChallenges(raw) {
   } catch { return null }
 }
 
+function parseQuiz(raw) {
+  try {
+    const parsed = JSON.parse(raw)
+    return parsed && typeof parsed === 'object' ? parsed : null
+  } catch { return null }
+}
+
+function parseActiveQuiz(raw) {
+  try {
+    return raw ? JSON.parse(raw) : null
+  } catch { return null }
+}
+
 /* ── Timer overlay ───────────────────────────────────────────── */
 function playBeep() {
   try {
@@ -105,6 +118,57 @@ function TimerOverlay() {
       <div className="font-bebas text-yellow leading-none" style={{ fontSize: done ? 110 : 200 }}>
         {done ? 'TIJD IS OM!' : `${mm}:${ss}`}
       </div>
+    </div>
+  )
+}
+
+/* ── Quiz overlay ────────────────────────────────────────────── */
+function QuizOverlay() {
+  const [active, setActive] = useState(null)
+  const [question, setQuestion] = useState(null)
+
+  useEffect(() => {
+    const tick = setInterval(() => {
+      const activeState = parseActiveQuiz(localStorage.getItem('tdf_quiz_active'))
+      setActive(activeState)
+      if (!activeState) { setQuestion(null); return }
+      const quiz = parseQuiz(localStorage.getItem('tdf_quiz'))
+      const q = quiz?.[activeState.stage]?.[activeState.questionIndex] ?? null
+      setQuestion(q)
+    }, 1000)
+    return () => clearInterval(tick)
+  }, [])
+
+  if (!active || !question) return null
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 100,
+      background: '#12131A',
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      gap: 32, padding: '5vh 8vw',
+    }}>
+      <div className="font-barlow-condensed font-bold uppercase tracking-[0.3em] text-yellow" style={{ fontSize: 22 }}>
+        Stage {active.stage} · Vraag {active.questionIndex + 1}
+      </div>
+      <div className="font-bebas text-white text-center leading-tight" style={{ fontSize: 'clamp(40px, 6vw, 96px)' }}>
+        {question.tekst}
+      </div>
+      {question.opties?.length > 0 && (
+        <div className="grid grid-cols-2 gap-6 w-full max-w-4xl mt-6">
+          {question.opties.map((optie, i) => (
+            <div key={i} className="flex items-center gap-4 bg-card border border-line rounded-2xl px-6 py-5">
+              <div className="font-bebas text-yellow shrink-0" style={{ fontSize: 44 }}>
+                {String.fromCharCode(65 + i)}
+              </div>
+              <div className="font-barlow-condensed font-semibold text-white" style={{ fontSize: 26 }}>
+                {optie}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -326,6 +390,15 @@ function LivePage() {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const prevLeader = useRef(null)
   const containerRef = useRef(null)
+  const [quizActive, setQuizActive] = useState(false)
+
+  /* Poll whether a quiz question is currently shown, every 1s */
+  useEffect(() => {
+    const poll = setInterval(() => {
+      setQuizActive(!!localStorage.getItem('tdf_quiz_active'))
+    }, 1000)
+    return () => clearInterval(poll)
+  }, [])
 
   /* Poll localStorage every 3s */
   useEffect(() => {
@@ -367,7 +440,7 @@ function LivePage() {
 
   return (
     <>
-      <TimerOverlay />
+      {quizActive ? <QuizOverlay /> : <TimerOverlay />}
       <div
         ref={containerRef}
         style={{
