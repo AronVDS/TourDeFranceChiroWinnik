@@ -57,7 +57,7 @@ export function AppProvider({ children }) {
   useEffect(() => { localStorage.setItem('tdf_config', JSON.stringify(config)) }, [config])
 
   const addTeam = (team) => {
-    const newTeam = { ...team, id: Date.now(), total_points: 0, mountain_points: 0, sprint_points: 0, stage1_points: 0, stage2_points: 0, stage3_points: 0, bonus_points: 0, penalty_points: 0 }
+    const newTeam = { ...team, id: Date.now(), total_points: 0, mountain_points: 0, sprint_points: 0, junioren_points: 0, stage1_points: 0, stage2_points: 0, stage3_points: 0, bonus_points: 0, penalty_points: 0 }
     setTeams(prev => [...prev, newTeam])
   }
 
@@ -100,7 +100,7 @@ export function AppProvider({ children }) {
   const recalculateAll = () => setTeams(recalculateAllPoints(teams, challenges, bonusPenalties))
 
   const resetScores = () => {
-    const reset = teams.map(t => ({ ...t, total_points: 0, mountain_points: 0, sprint_points: 0, stage1_points: 0, stage2_points: 0, stage3_points: 0, bonus_points: 0, penalty_points: 0 }))
+    const reset = teams.map(t => ({ ...t, total_points: 0, mountain_points: 0, sprint_points: 0, junioren_points: 0, stage1_points: 0, stage2_points: 0, stage3_points: 0, bonus_points: 0, penalty_points: 0 }))
     setTeams(reset)
     setChallenges(prev => prev.map(c => ({ ...c, results: [], completed: false })))
     setBonusPenalties([])
