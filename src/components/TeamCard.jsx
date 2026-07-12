@@ -2,6 +2,10 @@ import { motion } from 'framer-motion'
 
 const medals = { 1: '🥇', 2: '🥈', 3: '🥉' }
 
+function geslachtIcon(waarde) {
+  return waarde === 'jongen' ? '🧑' : waarde === 'meisje' ? '👧' : '❓'
+}
+
 export default function TeamCard({ team, rank, maxPts = 1 }) {
   const barWidth = maxPts > 0 ? (team.total_points / maxPts) * 100 : 0
 
@@ -34,7 +38,7 @@ export default function TeamCard({ team, rank, maxPts = 1 }) {
                 <span className="font-barlow-condensed font-bold text-[9px] uppercase tracking-wider text-yellow mr-0.5">👑 Leiding</span>
                 {team.leden.leiding.map(lid => (
                   <span key={lid} className="text-[11px] bg-yellow/10 text-yellow/85 border border-yellow/25 px-2 py-0.5 rounded-full font-barlow-condensed font-semibold">
-                    {lid}
+                    {geslachtIcon(team.leden?.geslacht?.[lid])} {lid}
                   </span>
                 ))}
               </div>
@@ -46,7 +50,7 @@ export default function TeamCard({ team, rank, maxPts = 1 }) {
                 <span className="font-barlow-condensed font-bold text-[9px] uppercase tracking-wider text-muted mr-0.5">🚴 Aspis</span>
                 {team.leden.aspis.map(lid => (
                   <span key={lid} className="text-[11px] bg-card-2 text-muted border border-line px-2 py-0.5 rounded-full font-barlow-condensed font-semibold">
-                    {lid}
+                    {geslachtIcon(team.leden?.geslacht?.[lid])} {lid}
                   </span>
                 ))}
               </div>
