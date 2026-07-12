@@ -241,6 +241,175 @@ function TeamsTab() {
   )
 }
 
+/* ── Quiz tab ───────────────────────────────────────────────── */
+function readActiveQuiz() {
+  try {
+    const raw = localStorage.getItem('tdf_quiz_active')
+    return raw ? JSON.parse(raw) : null
+  } catch { return null }
+}
+
+function QuizTab() {
+  const { teams, quiz, updateQuizQuestion, setQuizAnswer } = useApp()
+  const [stageFilter, setStageFilter] = useState(1)
+  const [editing, setEditing] = useState(null)
+  const [form, setForm] = useState({ tekst: '', optieA: '', optieB: '', optieC: '', optieD: '' })
+  const [active, setActive] = useState(() => readActiveQuiz())
+
+  useEffect(() => {
+    const id = setInterval(() => setActive(readActiveQuiz()), 1000)
+    return () => clearInterval(id)
+  }, [])
+
+  const questions = quiz[stageFilter] ?? []
+
+  const startEdit = (index) => {
+    const q = questions[index]
+    const opties = q.opties ?? []
+    setEditing(index)
+    setForm({ tekst: q.tekst, optieA: opties[0] ?? '', optieB: opties[1] ?? '', optieC: opties[2] ?? '', optieD: opties[3] ?? '' })
+  }
+
+  const save = () => {
+    const opties = [form.optieA, form.optieB, form.optieC, form.optieD]
+      .map(o => o.trim())
+      .filter(o => o.length > 0)
+    updateQuizQuestion(stageFilter, editing, { tekst: form.tekst.trim(), opties })
+    setEditing(null)
+  }
+
+  const showOnLive = (index) => {
+    localStorage.setItem('tdf_quiz_active', JSON.stringify({ stage: stageFilter, questionIndex: index }))
+    setActive({ stage: stageFilter, questionIndex: index })
+  }
+
+  const hideFromLive = () => {
+    localStorage.removeItem('tdf_quiz_active')
+    setActive(null)
+  }
+
+  const isActive = (index) => active?.stage === stageFilter && active?.questionIndex === index
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-5">
+        <h2 className="font-bebas text-4xl text-white">Quiz</h2>
+      </div>
+
+      <div className="flex gap-2 mb-5 p-1 bg-card border border-line rounded-xl">
+        {[1, 2, 3].map(s => (
+          <button key={s} onClick={() => setStageFilter(s)}
+            className={`flex-1 py-2 px-3 rounded-lg font-barlow-condensed font-bold text-sm transition-all border ${
+              stageFilter === s ? 'bg-yellow text-black border-yellow' : 'text-muted hover:text-white border-transparent'
+            }`}>
+            Stage {s}
+          </button>
+        ))}
+      </div>
+
+      <div className="space-y-4">
+        {questions.map((q, index) => {
+          const correctCount = teams.filter(t => q.antwoorden?.[String(t.id)]).length
+          const isEditing = editing === index
+          return (
+            <div key={q.id} className={`${cardCls} p-4`}>
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="flex-1 min-w-0">
+                  <div className="font-barlow-condensed font-bold text-[10px] uppercase tracking-widest text-muted mb-1">
+                    Vraag {index + 1}
+                  </div>
+                  <div className="font-barlow-condensed font-semibold text-white">
+                    {q.tekst || <span className="text-muted italic">Nog niet ingevuld</span>}
+                  </div>
+                  {q.opties?.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {q.opties.map((o, i) => (
+                        <span key={i} className="text-[11px] bg-card-2 border border-line text-muted px-2 py-0.5 rounded-full font-barlow-condensed font-semibold">
+                          {String.fromCharCode(65 + i)}. {o}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <button onClick={() => startEdit(index)} className="p-2 text-muted hover:text-yellow hover:bg-yellow/10 rounded-lg transition-colors shrink-0">
+                  <Edit2 className="w-4 h-4" />
+                </button>
+              </div>
+
+              {isEditing && (
+                <FormPanel title={`Vraag ${index + 1} bewerken`} onClose={() => setEditing(null)}>
+                  <div className="space-y-3">
+                    <div>
+                      <label className={labelCls}>Vraagtekst</label>
+                      <input value={form.tekst} onChange={e => setForm(p => ({ ...p, tekst: e.target.value }))} placeholder="Vraag..." className={inputCls} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className={labelCls}>Optie A</label>
+                        <input value={form.optieA} onChange={e => setForm(p => ({ ...p, optieA: e.target.value }))} className={inputCls} />
+                      </div>
+                      <div>
+                        <label className={labelCls}>Optie B</label>
+                        <input value={form.optieB} onChange={e => setForm(p => ({ ...p, optieB: e.target.value }))} className={inputCls} />
+                      </div>
+                      <div>
+                        <label className={labelCls}>Optie C</label>
+                        <input value={form.optieC} onChange={e => setForm(p => ({ ...p, optieC: e.target.value }))} className={inputCls} />
+                      </div>
+                      <div>
+                        <label className={labelCls}>Optie D</label>
+                        <input value={form.optieD} onChange={e => setForm(p => ({ ...p, optieD: e.target.value }))} className={inputCls} />
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted font-barlow">Laat alle 4 opties leeg voor een open vraag.</p>
+                    <div className="flex gap-2 justify-end pt-1">
+                      <button onClick={() => setEditing(null)} className={btnS}>Annuleer</button>
+                      <button onClick={save} className={btnP}><Save className="w-4 h-4" /> Opslaan</button>
+                    </div>
+                  </div>
+                </FormPanel>
+              )}
+
+              <div className="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-line/50">
+                <button
+                  onClick={() => isActive(index) ? hideFromLive() : showOnLive(index)}
+                  disabled={!q.tekst}
+                  className={`px-3 py-2 rounded-lg font-barlow-condensed font-bold text-xs uppercase tracking-wide transition-colors border disabled:opacity-30 disabled:cursor-not-allowed ${
+                    isActive(index) ? 'bg-red-500/10 text-red-400 border-red-500/30' : 'bg-card-2 text-muted border-line hover:border-yellow/30 hover:text-white'
+                  }`}>
+                  {isActive(index) ? '🔴 Actief — Verberg' : 'Toon op Live scherm'}
+                </button>
+                <span className="text-xs font-barlow-condensed font-semibold text-muted">
+                  {correctCount}/{teams.length} teams juist
+                </span>
+              </div>
+
+              <div className="flex flex-wrap gap-1.5 mt-3">
+                {teams.map(t => {
+                  const correct = !!q.antwoorden?.[String(t.id)]
+                  return (
+                    <button
+                      key={t.id}
+                      onClick={() => setQuizAnswer(stageFilter, index, t.id, !correct)}
+                      className={`flex items-center gap-1.5 text-xs font-barlow-condensed font-semibold px-2.5 py-1.5 rounded-full border transition-all ${
+                        correct
+                          ? 'bg-green-500/15 border-green-500/40 text-green-400'
+                          : 'bg-card-2 border-line text-muted hover:border-yellow/30 hover:text-white'
+                      }`}>
+                      <span className="w-2 h-2 rounded-full shrink-0" style={{ background: t.kleur }} />
+                      {correct ? '✅' : ''} {t.naam}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 /* ── Challenges tab ─────────────────────────────────────────── */
 const TYPE_LABELS = { general: '🏆 Algemeen', mountain: '🏔️ Berg', sprint: '⚡ Sprint', junioren: '🧒 Junioren' }
 const TYPE_COLORS = { general: '#FFD600', mountain: '#3B82F6', sprint: '#22C55E', junioren: '#8B5CF6' }
@@ -831,6 +1000,7 @@ const TABS = [
   { key: 'challenges',   label: 'Challenges' },
   { key: 'results',      label: 'Resultaten' },
   { key: 'bonuspenalty', label: 'Bonus/Straf' },
+  { key: 'quiz',         label: 'Quiz' },
   { key: 'config',       label: 'Config' },
 ]
 
@@ -908,6 +1078,7 @@ export default function Admin() {
                 {activeTab === 'challenges'   && <ChallengesTab />}
                 {activeTab === 'results'      && <ResultsTab />}
                 {activeTab === 'bonuspenalty' && <BonusPenaltyTab />}
+                {activeTab === 'quiz'         && <QuizTab />}
                 {activeTab === 'config'       && <ConfigTab />}
               </motion.div>
             </AnimatePresence>
