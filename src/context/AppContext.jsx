@@ -90,7 +90,7 @@ export function AppProvider({ children }) {
   const [teams, setTeams] = useState(() => loadTeams(SEED_TEAMS))
   const [challenges, setChallenges] = useState(() => load('tdf_challenges', []))
   const [bonusPenalties, setBonusPenalties] = useState(() => load('tdf_bonuspenalties', []))
-  const [config, setConfig] = useState(() => load('tdf_config', SEED_CONFIG))
+  const [config, setConfig] = useState(() => ({ ...SEED_CONFIG, ...load('tdf_config', {}) }))
   const [quiz, setQuiz] = useState(() => loadQuiz(SEED_QUIZ))
 
   useEffect(() => { localStorage.setItem('tdf_teams', JSON.stringify(teams)) }, [teams])
