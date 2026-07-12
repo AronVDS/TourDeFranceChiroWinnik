@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useApp } from '../context/AppContext'
-import { berekenJuniorenStats } from '../utils/mvp'
+import { berekenJuniorenStats, berekenAllSpelerStats } from '../utils/mvp'
 
 const TABS = [
   { key: 'general',  label: 'Algemeen',  icon: '🏆', pointKey: 'total_points' },
   { key: 'mountain', label: 'Berg',      icon: '🏔️', pointKey: 'mountain_points' },
   { key: 'sprint',   label: 'Sprint',    icon: '⚡',  pointKey: 'sprint_points' },
   { key: 'junioren', label: 'Junioren',  icon: '🧒', pointKey: 'junioren_points' },
+  { key: 'mvp',      label: 'MVP',       icon: '👑', pointKey: null },
 ]
 
 const podiumBorder = ['border-yellow/30', 'border-gray-400/20', 'border-orange-500/20']
@@ -19,6 +20,55 @@ const TAB_BAR_COLOR = {
   mountain: '#3B82F6',
   sprint:   '#22C55E',
   junioren: '#8B5CF6',
+  mvp:      '#FFD600',
+}
+
+function MvpGenderList({ title, icon, players, accentColor }) {
+  const top = players.slice(0, 8)
+  return (
+    <div>
+      <p className="font-barlow-condensed font-bold text-[11px] uppercase tracking-[0.3em] text-muted mb-3">
+        {icon} {title}
+      </p>
+      {top.length === 0 ? (
+        <div className="text-center py-8 text-muted font-barlow text-sm">
+          Nog geen scores voor deze categorie
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {top.map((player, i) => (
+            <div
+              key={`${player.naam}-${player.team_id}`}
+              className="card rounded-xl px-4 py-3 flex items-center gap-3"
+              style={i === 0 ? { background: `linear-gradient(135deg, ${accentColor}14, #1C1E2A)`, border: `1px solid ${accentColor}4D` } : {}}
+            >
+              <span
+                className={`font-bebas text-2xl leading-none w-8 text-center shrink-0 ${i === 0 ? '' : 'text-muted'}`}
+                style={i === 0 ? { color: accentColor } : {}}
+              >
+                {i === 0 ? '👑' : i + 1}
+              </span>
+              <div className="w-3 h-3 rounded-full shrink-0" style={{ background: player.team_kleur }} />
+              <div className="flex-1 min-w-0">
+                <div className="font-barlow-condensed font-semibold text-white text-base leading-none truncate">
+                  {player.naam}
+                </div>
+                <div className="text-muted text-xs font-barlow-condensed mt-0.5">
+                  {player.team_naam} · {player.challenges_gespeeld} challenge{player.challenges_gespeeld !== 1 ? 's' : ''}
+                </div>
+              </div>
+              <div className="text-right shrink-0">
+                <span className="font-bebas text-xl leading-none" style={{ color: accentColor }}>
+                  {player.punten_bijgedragen}
+                </span>
+                <span className="text-muted text-xs font-barlow-condensed ml-1">pts</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
 
 export default function Rankings() {
@@ -26,7 +76,7 @@ export default function Rankings() {
   const [activeTab, setActiveTab] = useState('general')
 
   const tab     = TABS.find(t => t.key === activeTab)
-  const sorted  = [...teams].sort((a, b) => (b[tab.pointKey] ?? 0) - (a[tab.pointKey] ?? 0))
+  const sorted  = tab.pointKey ? [...teams].sort((a, b) => (b[tab.pointKey] ?? 0) - (a[tab.pointKey] ?? 0)) : []
   const maxPts  = Math.max(...sorted.map(t => t[tab.pointKey] ?? 0), 1)
 
   const totalPoints  = sorted.reduce((s, t) => s + t.total_points, 0)
@@ -34,6 +84,11 @@ export default function Rankings() {
   const mostSprint   = [...sorted].sort((a, b) => b.sprint_points   - a.sprint_points)[0]
 
   const juniorenStats = berekenJuniorenStats(teams, challenges).filter(p => p.mvp_score > 0)
+
+  const allMvpStats        = activeTab === 'mvp' ? berekenAllSpelerStats(teams, challenges) : []
+  const jongensStats       = allMvpStats.filter(p => p.geslacht === 'jongen')
+  const meisjesStats       = allMvpStats.filter(p => p.geslacht === 'meisje')
+  const nietIngesteldCount = allMvpStats.filter(p => !p.geslacht).length
 
   return (
     <div className="min-h-screen page-enter">
@@ -68,6 +123,7 @@ export default function Rankings() {
           ))}
         </div>
 
+        {activeTab !== 'mvp' && (
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -128,6 +184,25 @@ export default function Rankings() {
             )}
           </motion.div>
         </AnimatePresence>
+        )}
+
+        {activeTab === 'mvp' && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            {nietIngesteldCount > 0 && (
+              <div className="bg-yellow/10 border border-yellow/30 rounded-xl px-4 py-3 mb-5 text-sm font-barlow-condensed font-semibold text-yellow">
+                ⚠️ {nietIngesteldCount} speler{nietIngesteldCount !== 1 ? 's' : ''} nog niet ingesteld — vul in via de Teams-tab
+              </div>
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <MvpGenderList title="Top MVP Jongens" icon="🧑" players={jongensStats} accentColor="#3B82F6" />
+              <MvpGenderList title="Top MVP Meisjes" icon="👧" players={meisjesStats} accentColor="#EC4899" />
+            </div>
+          </motion.div>
+        )}
 
         {/* Junioren: aspis ranking */}
         {activeTab === 'junioren' && (
