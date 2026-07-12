@@ -257,9 +257,14 @@ function QuizTab() {
   const [active, setActive] = useState(() => readActiveQuiz())
 
   useEffect(() => {
+    setActive(readActiveQuiz())
     const id = setInterval(() => setActive(readActiveQuiz()), 1000)
     return () => clearInterval(id)
   }, [])
+
+  useEffect(() => {
+    setEditing(null)
+  }, [stageFilter])
 
   const questions = quiz[stageFilter] ?? []
 
