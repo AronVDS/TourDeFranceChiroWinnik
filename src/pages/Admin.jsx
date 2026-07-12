@@ -985,7 +985,7 @@ function ConfigTab() {
               </div>
               <h3 className="font-bebas text-3xl text-white mb-2">Alles resetten?</h3>
               <p className="text-muted font-barlow text-sm mb-6">
-                Dit wist alle scores, resultaten en bonus/straf. Teams blijven bewaard. Niet ongedaan te maken!
+                Dit wist alle scores, resultaten, bonus/straf en quiz-antwoorden. Teams en quizvragen blijven bewaard. Niet ongedaan te maken!
               </p>
               <div className="flex gap-3">
                 <button onClick={() => setResetConfirm(false)} className={`flex-1 ${btnS} py-3 justify-center`}>Annuleer</button>
