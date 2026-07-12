@@ -4,10 +4,10 @@ import { recalculateAllPoints } from '../utils/points'
 const AppContext = createContext(null)
 
 const SEED_TEAMS = [
-  { id: 1, naam: 'Team Geel',  kleur: '#EAB308', leden: { leiding: ['Aron'],  aspis: ['Bram', 'Jonas'] }, total_points: 0, mountain_points: 0, sprint_points: 0, junioren_points: 0, stage1_points: 0, stage2_points: 0, stage3_points: 0, bonus_points: 0, penalty_points: 0 },
-  { id: 2, naam: 'Team Rood',  kleur: '#EF4444', leden: { leiding: ['Lena'],  aspis: ['Finn', 'Sara'] },  total_points: 0, mountain_points: 0, sprint_points: 0, junioren_points: 0, stage1_points: 0, stage2_points: 0, stage3_points: 0, bonus_points: 0, penalty_points: 0 },
-  { id: 3, naam: 'Team Blauw', kleur: '#3B82F6', leden: { leiding: ['Wout'],  aspis: ['Marie', 'Kobe'] }, total_points: 0, mountain_points: 0, sprint_points: 0, junioren_points: 0, stage1_points: 0, stage2_points: 0, stage3_points: 0, bonus_points: 0, penalty_points: 0 },
-  { id: 4, naam: 'Team Groen', kleur: '#22C55E', leden: { leiding: ['Julie'], aspis: ['Tom', 'Noor'] },   total_points: 0, mountain_points: 0, sprint_points: 0, junioren_points: 0, stage1_points: 0, stage2_points: 0, stage3_points: 0, bonus_points: 0, penalty_points: 0 },
+  { id: 1, naam: 'Team Geel',  kleur: '#EAB308', leden: { leiding: ['Aron'],  aspis: ['Bram', 'Jonas'] }, total_points: 0, mountain_points: 0, sprint_points: 0, junioren_points: 0, quiz_points: 0, stage1_points: 0, stage2_points: 0, stage3_points: 0, bonus_points: 0, penalty_points: 0 },
+  { id: 2, naam: 'Team Rood',  kleur: '#EF4444', leden: { leiding: ['Lena'],  aspis: ['Finn', 'Sara'] },  total_points: 0, mountain_points: 0, sprint_points: 0, junioren_points: 0, quiz_points: 0, stage1_points: 0, stage2_points: 0, stage3_points: 0, bonus_points: 0, penalty_points: 0 },
+  { id: 3, naam: 'Team Blauw', kleur: '#3B82F6', leden: { leiding: ['Wout'],  aspis: ['Marie', 'Kobe'] }, total_points: 0, mountain_points: 0, sprint_points: 0, junioren_points: 0, quiz_points: 0, stage1_points: 0, stage2_points: 0, stage3_points: 0, bonus_points: 0, penalty_points: 0 },
+  { id: 4, naam: 'Team Groen', kleur: '#22C55E', leden: { leiding: ['Julie'], aspis: ['Tom', 'Noor'] },   total_points: 0, mountain_points: 0, sprint_points: 0, junioren_points: 0, quiz_points: 0, stage1_points: 0, stage2_points: 0, stage3_points: 0, bonus_points: 0, penalty_points: 0 },
 ]
 
 /* Migrate old flat-array leden to { leiding, aspis } */
@@ -23,6 +23,7 @@ const SEED_CONFIG = {
   start_date: '2026-07-01T10:00:00',
   admin_password: 'chiro2026',
   winner_team_id: null,
+  quiz_points_per_question: 10,
 }
 
 function load(key, fallback) {
@@ -45,16 +46,58 @@ function loadTeams(fallback) {
   }
 }
 
+function makeEmptyQuestion(id) {
+  return { id, tekst: '', opties: [], antwoorden: {} }
+}
+
+function makeEmptyStageQuestions(stageNum) {
+  return [1, 2, 3, 4].map(n => makeEmptyQuestion(stageNum * 10 + n))
+}
+
+const SEED_QUIZ = {
+  1: makeEmptyStageQuestions(1),
+  2: makeEmptyStageQuestions(2),
+  3: makeEmptyStageQuestions(3),
+}
+
+function normalizeQuizStage(stageQuestions, stageNum) {
+  const base = Array.isArray(stageQuestions) ? stageQuestions.slice(0, 4) : []
+  while (base.length < 4) base.push(makeEmptyQuestion(stageNum * 10 + base.length + 1))
+  return base.map((q, i) => ({
+    id: q?.id ?? stageNum * 10 + i + 1,
+    tekst: q?.tekst ?? '',
+    opties: Array.isArray(q?.opties) ? q.opties : [],
+    antwoorden: q?.antwoorden && typeof q.antwoorden === 'object' ? q.antwoorden : {},
+  }))
+}
+
+function loadQuiz(fallback) {
+  try {
+    const stored = localStorage.getItem('tdf_quiz')
+    if (!stored) return fallback
+    const parsed = JSON.parse(stored)
+    return {
+      1: normalizeQuizStage(parsed?.[1], 1),
+      2: normalizeQuizStage(parsed?.[2], 2),
+      3: normalizeQuizStage(parsed?.[3], 3),
+    }
+  } catch {
+    return fallback
+  }
+}
+
 export function AppProvider({ children }) {
   const [teams, setTeams] = useState(() => loadTeams(SEED_TEAMS))
   const [challenges, setChallenges] = useState(() => load('tdf_challenges', []))
   const [bonusPenalties, setBonusPenalties] = useState(() => load('tdf_bonuspenalties', []))
   const [config, setConfig] = useState(() => load('tdf_config', SEED_CONFIG))
+  const [quiz, setQuiz] = useState(() => loadQuiz(SEED_QUIZ))
 
   useEffect(() => { localStorage.setItem('tdf_teams', JSON.stringify(teams)) }, [teams])
   useEffect(() => { localStorage.setItem('tdf_challenges', JSON.stringify(challenges)) }, [challenges])
   useEffect(() => { localStorage.setItem('tdf_bonuspenalties', JSON.stringify(bonusPenalties)) }, [bonusPenalties])
   useEffect(() => { localStorage.setItem('tdf_config', JSON.stringify(config)) }, [config])
+  useEffect(() => { localStorage.setItem('tdf_quiz', JSON.stringify(quiz)) }, [quiz])
 
   const addTeam = (team) => {
     const newTeam = { ...team, id: Date.now(), total_points: 0, mountain_points: 0, sprint_points: 0, junioren_points: 0, stage1_points: 0, stage2_points: 0, stage3_points: 0, bonus_points: 0, penalty_points: 0 }
