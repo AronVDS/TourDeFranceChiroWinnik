@@ -440,23 +440,22 @@ function LivePage() {
   const eventNaam = config?.event_naam ?? 'Tour de Chiro'
 
   return (
-    <>
+    <div
+      ref={containerRef}
+      style={{
+        height: '100vh',
+        overflow: 'hidden',
+        display: 'grid',
+        gridTemplateRows: '10vh 1fr 15vh',
+        background: `
+          radial-gradient(circle, rgba(42,45,62,0.45) 1px, transparent 1px) 0 0 / 20px 20px,
+          linear-gradient(135deg, #080B14 0%, #0D1117 100%)
+        `,
+        boxSizing: 'border-box',
+      }}
+    >
       {quizActive ? <QuizOverlay /> : <TimerOverlay />}
-      <div
-        ref={containerRef}
-        style={{
-          height: '100vh',
-          overflow: 'hidden',
-          display: 'grid',
-          gridTemplateRows: '10vh 1fr 15vh',
-          background: `
-            radial-gradient(circle, rgba(42,45,62,0.45) 1px, transparent 1px) 0 0 / 20px 20px,
-            linear-gradient(135deg, #080B14 0%, #0D1117 100%)
-          `,
-          boxSizing: 'border-box',
-        }}
-      >
-        {/* ── Header ──────────────────────────────────────── */}
+      {/* ── Header ──────────────────────────────────────── */}
         <div
           className="flex items-center px-6 gap-6"
           style={{ borderBottom: '1px solid rgba(255,214,0,0.18)' }}
@@ -571,8 +570,7 @@ function LivePage() {
 
         {/* ── Stats bar ────────────────────────────────────── */}
         <StatsBar sorted={sorted} />
-      </div>
-    </>
+    </div>
   )
 }
 

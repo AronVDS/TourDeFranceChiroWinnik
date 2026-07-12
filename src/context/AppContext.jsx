@@ -23,7 +23,7 @@ const SEED_CONFIG = {
   start_date: '2026-07-01T10:00:00',
   admin_password: 'chiro2026',
   winner_team_id: null,
-  quiz_points_per_question: 10,
+  quiz_points_per_question: 1,
 }
 
 function load(key, fallback) {
