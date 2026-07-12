@@ -100,7 +100,7 @@ export function AppProvider({ children }) {
   useEffect(() => { localStorage.setItem('tdf_quiz', JSON.stringify(quiz)) }, [quiz])
 
   const addTeam = (team) => {
-    const newTeam = { ...team, id: Date.now(), total_points: 0, mountain_points: 0, sprint_points: 0, junioren_points: 0, stage1_points: 0, stage2_points: 0, stage3_points: 0, bonus_points: 0, penalty_points: 0 }
+    const newTeam = { ...team, id: Date.now(), total_points: 0, mountain_points: 0, sprint_points: 0, junioren_points: 0, quiz_points: 0, stage1_points: 0, stage2_points: 0, stage3_points: 0, bonus_points: 0, penalty_points: 0 }
     setTeams(prev => [...prev, newTeam])
   }
 
@@ -128,29 +128,52 @@ export function AppProvider({ children }) {
     }))
     const updatedChallenges = challenges.map(c => c.id === challengeId ? { ...c, results, completed: true } : c)
     setChallenges(updatedChallenges)
-    setTeams(recalculateAllPoints(teams, updatedChallenges, bonusPenalties))
+    setTeams(recalculateAllPoints(teams, updatedChallenges, bonusPenalties, quiz, config.quiz_points_per_question))
   }
 
   const addBonusPenalty = (entry) => {
     const newEntry = { ...entry, id: Date.now(), date: new Date().toISOString() }
     const updated = [...bonusPenalties, newEntry]
     setBonusPenalties(updated)
-    setTeams(recalculateAllPoints(teams, challenges, updated))
+    setTeams(recalculateAllPoints(teams, challenges, updated, quiz, config.quiz_points_per_question))
   }
 
   const updateConfig = (updates) => setConfig(prev => ({ ...prev, ...updates }))
 
-  const recalculateAll = () => setTeams(recalculateAllPoints(teams, challenges, bonusPenalties))
+  const recalculateAll = () => setTeams(recalculateAllPoints(teams, challenges, bonusPenalties, quiz, config.quiz_points_per_question))
+
+  const updateQuizQuestion = (stage, index, updates) => {
+    setQuiz(prev => ({
+      ...prev,
+      [stage]: prev[stage].map((q, i) => i === index ? { ...q, ...updates } : q),
+    }))
+  }
+
+  const setQuizAnswer = (stage, index, teamId, correct) => {
+    const updatedQuiz = {
+      ...quiz,
+      [stage]: quiz[stage].map((q, i) => i === index
+        ? { ...q, antwoorden: { ...q.antwoorden, [String(teamId)]: correct } }
+        : q),
+    }
+    setQuiz(updatedQuiz)
+    setTeams(recalculateAllPoints(teams, challenges, bonusPenalties, updatedQuiz, config.quiz_points_per_question))
+  }
 
   const resetScores = () => {
-    const reset = teams.map(t => ({ ...t, total_points: 0, mountain_points: 0, sprint_points: 0, junioren_points: 0, stage1_points: 0, stage2_points: 0, stage3_points: 0, bonus_points: 0, penalty_points: 0 }))
+    const reset = teams.map(t => ({ ...t, total_points: 0, mountain_points: 0, sprint_points: 0, junioren_points: 0, quiz_points: 0, stage1_points: 0, stage2_points: 0, stage3_points: 0, bonus_points: 0, penalty_points: 0 }))
     setTeams(reset)
     setChallenges(prev => prev.map(c => ({ ...c, results: [], completed: false })))
     setBonusPenalties([])
+    setQuiz(prev => ({
+      1: prev[1].map(q => ({ ...q, antwoorden: {} })),
+      2: prev[2].map(q => ({ ...q, antwoorden: {} })),
+      3: prev[3].map(q => ({ ...q, antwoorden: {} })),
+    }))
   }
 
   return (
-    <AppContext.Provider value={{ teams, challenges, bonusPenalties, config, addTeam, updateTeam, deleteTeam, addChallenge, updateChallenge, deleteChallenge, setResults, addBonusPenalty, updateConfig, recalculateAll, resetScores }}>
+    <AppContext.Provider value={{ teams, challenges, bonusPenalties, config, quiz, addTeam, updateTeam, deleteTeam, addChallenge, updateChallenge, deleteChallenge, setResults, addBonusPenalty, updateConfig, recalculateAll, resetScores, updateQuizQuestion, setQuizAnswer }}>
       {children}
     </AppContext.Provider>
   )
