@@ -156,7 +156,7 @@ export function AppProvider({ children }) {
         ? { ...q, antwoorden: { ...q.antwoorden, [String(teamId)]: correct } }
         : q),
     }
-    setQuiz(updatedQuiz)
+    setQuiz(prev => ({ ...prev, [stage]: updatedQuiz[stage] }))
     setTeams(recalculateAllPoints(teams, challenges, bonusPenalties, updatedQuiz, config.quiz_points_per_question))
   }
 
