@@ -501,12 +501,12 @@ function ChallengesTab() {
   const { challenges, addChallenge, updateChallenge, deleteChallenge } = useApp()
   const [stageFilter, setStageFilter] = useState(1)
   const [editing, setEditing] = useState(null)
-  const [form, setForm] = useState({ naam: '', stage_number: 1, type: 'general', power_stage: false, notes: '' })
+  const [form, setForm] = useState({ naam: '', stage_number: 1, type: 'general', power_stage: false, result_mode: 'ranking', notes: '' })
 
   const filtered = challenges.filter(c => c.stage_number === stageFilter)
 
-  const startNew = () => { setEditing('new'); setForm({ naam: '', stage_number: stageFilter, type: 'general', power_stage: false, notes: '' }) }
-  const startEdit = (c) => { setEditing(c.id); setForm({ naam: c.naam, stage_number: c.stage_number, type: c.type, power_stage: c.power_stage, notes: c.notes }) }
+  const startNew = () => { setEditing('new'); setForm({ naam: '', stage_number: stageFilter, type: 'general', power_stage: false, result_mode: 'ranking', notes: '' }) }
+  const startEdit = (c) => { setEditing(c.id); setForm({ naam: c.naam, stage_number: c.stage_number, type: c.type, power_stage: c.power_stage, result_mode: c.result_mode ?? 'ranking', notes: c.notes }) }
   const save = () => {
     if (!form.naam.trim()) return
     if (editing === 'new') addChallenge({ ...form, naam: form.naam.trim() })
@@ -570,6 +570,23 @@ function ChallengesTab() {
               </div>
             </div>
             <div>
+              <label className={labelCls}>Resultaat-modus</label>
+              <div className="grid grid-cols-2 gap-3">
+                <button onClick={() => setForm(p => ({ ...p, result_mode: 'ranking' }))}
+                  className={`py-2.5 rounded-lg font-barlow-condensed font-bold text-sm border transition-all ${
+                    form.result_mode === 'ranking' ? 'bg-yellow text-black border-yellow' : 'bg-card-2 border-line text-muted hover:border-yellow/40'
+                  }`}>
+                  🏆 Klassement
+                </button>
+                <button onClick={() => setForm(p => ({ ...p, result_mode: 'pass_fail' }))}
+                  className={`py-2.5 rounded-lg font-barlow-condensed font-bold text-sm border transition-all ${
+                    form.result_mode === 'pass_fail' ? 'bg-yellow text-black border-yellow' : 'bg-card-2 border-line text-muted hover:border-yellow/40'
+                  }`}>
+                  ✅ Geslaagd/Niet geslaagd
+                </button>
+              </div>
+            </div>
+            <div>
               <label className={labelCls}>Notities</label>
               <textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Optionele notities..." className={`${inputCls} h-20 resize-none`} />
             </div>
@@ -610,25 +627,94 @@ function ChallengesTab() {
 }
 
 /* ── Results tab ────────────────────────────────────────────── */
+function PlayerPicker({ challenge, team, selectedSpelers, onToggle }) {
+  const leiding = team?.leden?.leiding ?? []
+  const aspis   = team?.leden?.aspis   ?? []
+  const allSpelers = [
+    ...leiding.map(n => ({ naam: n, isLeiding: true })),
+    ...aspis.map(n => ({ naam: n, isLeiding: false })),
+  ]
+  const hasSelection = selectedSpelers.length > 0
+
+  return (
+    <div className="mt-3 pt-3 border-t border-line/50">
+      <div className="flex items-center gap-2 mb-2 flex-wrap">
+        <span className="font-barlow-condensed font-bold text-[10px] uppercase tracking-wider text-muted">
+          Wie doet de opdracht?
+        </span>
+        {challenge.type === 'junioren' && (
+          <span className="text-[10px] font-barlow-condensed font-bold px-2 py-0.5 rounded-full border"
+            style={{ color: '#8B5CF6', background: 'rgba(139,92,246,0.08)', borderColor: 'rgba(139,92,246,0.3)' }}>
+            🧒 Alleen aspis
+          </span>
+        )}
+        {!hasSelection && (
+          <span className="text-[10px] text-yellow/70 font-barlow-condensed italic">
+            — nog niemand aangeduid
+          </span>
+        )}
+      </div>
+      {allSpelers.length === 0 ? (
+        <span className="text-xs text-muted/50 font-barlow italic">Geen spelers in dit team</span>
+      ) : (
+        <div className="flex flex-wrap gap-1.5">
+          {allSpelers.map(({ naam, isLeiding }) => {
+            const on = selectedSpelers.includes(naam)
+            const disabled = challenge.type === 'junioren' && isLeiding
+            return (
+              <button
+                key={naam}
+                onClick={() => !disabled && onToggle(naam)}
+                disabled={disabled}
+                title={disabled ? 'Alleen aspis voor junioren challenges' : undefined}
+                className={`flex items-center gap-1 text-xs font-barlow-condensed font-semibold px-2.5 py-1.5 rounded-full border transition-all ${
+                  disabled
+                    ? 'opacity-30 cursor-not-allowed bg-card-2 border-line text-muted'
+                    : on
+                      ? isLeiding
+                        ? 'bg-yellow/15 border-yellow/50 text-yellow'
+                        : 'bg-blue-500/15 border-blue-500/40 text-blue-300'
+                      : 'bg-card-2 border-line text-muted hover:border-yellow/30 hover:text-white'
+                }`}
+              >
+                {isLeiding ? '👑' : '🚴'} {naam}
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function ResultsTab() {
   const { teams, challenges, setResults: saveResults } = useApp()
   const [selected, setSelected]           = useState('')
   const [order, setOrder]                 = useState([])
+  const [failedIds, setFailedIds]         = useState([])
   const [playerSelections, setPlayerSel]  = useState({})
   const [saved, setSaved]                 = useState(false)
 
-  const challenge = challenges.find(c => c.id === parseInt(selected))
+  const challenge  = challenges.find(c => c.id === parseInt(selected))
+  const isPassFail = (challenge?.result_mode ?? 'ranking') === 'pass_fail'
 
   useEffect(() => {
     if (!challenge) return
     if (challenge.results?.length > 0) {
       const sorted = [...challenge.results].sort((a, b) => a.positie - b.positie)
-      setOrder(sorted.map(r => r.team_id))
+      if (isPassFail) {
+        setOrder(sorted.filter(r => r.geslaagd !== false).map(r => r.team_id))
+        setFailedIds(sorted.filter(r => r.geslaagd === false).map(r => r.team_id))
+      } else {
+        setOrder(sorted.map(r => r.team_id))
+        setFailedIds([])
+      }
       const sel = {}
       sorted.forEach(r => { sel[r.team_id] = r.spelers ?? [] })
       setPlayerSel(sel)
     } else {
       setOrder(teams.map(t => t.id))
+      setFailedIds([])
       const sel = {}
       teams.forEach(t => { sel[t.id] = [] })
       setPlayerSel(sel)
@@ -644,6 +730,16 @@ function ResultsTab() {
     setOrder(next)
   }
 
+  const markFailed = (teamId) => {
+    setOrder(prev => prev.filter(id => id !== teamId))
+    setFailedIds(prev => [...prev, teamId])
+  }
+
+  const markPassed = (teamId) => {
+    setFailedIds(prev => prev.filter(id => id !== teamId))
+    setOrder(prev => [...prev, teamId])
+  }
+
   const togglePlayer = (teamId, naam) => {
     setPlayerSel(prev => {
       const curr = prev[teamId] ?? []
@@ -656,7 +752,7 @@ function ResultsTab() {
 
   const handleSave = () => {
     if (!challenge) return
-    saveResults(challenge.id, order, playerSelections)
+    saveResults(challenge.id, order, playerSelections, isPassFail ? failedIds : [])
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
@@ -693,21 +789,22 @@ function ResultsTab() {
           </div>
 
           <p className="text-sm text-muted font-barlow mb-3">
-            Rangschik van <strong className="text-white">1e (beste)</strong> naar <strong className="text-white">laatste</strong> en duid aan wie de opdracht uitvoerde:
+            {isPassFail
+              ? <>Duid per team aan of ze <strong className="text-white">geslaagd</strong> zijn. Rangschik de geslaagde teams van <strong className="text-white">1e (beste)</strong> naar <strong className="text-white">laatste</strong> en duid aan wie de opdracht uitvoerde:</>
+              : <>Rangschik van <strong className="text-white">1e (beste)</strong> naar <strong className="text-white">laatste</strong> en duid aan wie de opdracht uitvoerde:</>}
           </p>
+
+          {isPassFail && (
+            <div className="font-barlow-condensed font-bold text-[11px] uppercase tracking-wider text-green-400 mb-2">
+              ✅ Geslaagd
+            </div>
+          )}
 
           <div className="space-y-3 mb-5">
             {order.map((teamId, idx) => {
-              const team    = teams.find(t => t.id === teamId)
-              const pts     = challenge.power_stage ? Math.max(0, (teams.length - 1 - idx) * 2) : Math.max(0, teams.length - 1 - idx)
-              const leiding = team?.leden?.leiding ?? []
-              const aspis   = team?.leden?.aspis   ?? []
-              const allSpelers = [
-                ...leiding.map(n => ({ naam: n, isLeiding: true })),
-                ...aspis.map(n => ({ naam: n, isLeiding: false })),
-              ]
+              const team     = teams.find(t => t.id === teamId)
+              const pts      = challenge.power_stage ? Math.max(0, (teams.length - 1 - idx) * 2) : Math.max(0, teams.length - 1 - idx)
               const selected = playerSelections[teamId] ?? []
-              const hasSelection = selected.length > 0
 
               return (
                 <div key={teamId} className={`${cardCls} p-4`}>
@@ -717,6 +814,12 @@ function ResultsTab() {
                     <div className="w-4 h-4 rounded-full shrink-0" style={{ background: team?.kleur }} />
                     <span className="flex-1 font-barlow-condensed font-semibold text-white">{team?.naam}</span>
                     <span className="font-bebas text-xl text-yellow">{pts} pts</span>
+                    {isPassFail && (
+                      <button onClick={() => markFailed(teamId)}
+                        className="px-2.5 py-1.5 rounded-lg text-[10px] font-barlow-condensed font-bold uppercase tracking-wide border bg-card-2 text-muted border-line hover:border-red-500/40 hover:text-red-400 transition-colors">
+                        ❌ Niet geslaagd
+                      </button>
+                    )}
                     <div className="flex gap-0.5">
                       <button onClick={() => move(idx, -1)} disabled={idx === 0}
                         className="p-1.5 text-muted hover:text-white disabled:opacity-20 rounded-lg hover:bg-white/5 transition-colors">
@@ -729,58 +832,43 @@ function ResultsTab() {
                     </div>
                   </div>
 
-                  {/* Player selection */}
-                  <div className="mt-3 pt-3 border-t border-line/50">
-                    <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      <span className="font-barlow-condensed font-bold text-[10px] uppercase tracking-wider text-muted">
-                        Wie doet de opdracht?
-                      </span>
-                      {challenge.type === 'junioren' && (
-                        <span className="text-[10px] font-barlow-condensed font-bold px-2 py-0.5 rounded-full border"
-                          style={{ color: '#8B5CF6', background: 'rgba(139,92,246,0.08)', borderColor: 'rgba(139,92,246,0.3)' }}>
-                          🧒 Alleen aspis
-                        </span>
-                      )}
-                      {!hasSelection && (
-                        <span className="text-[10px] text-yellow/70 font-barlow-condensed italic">
-                          — nog niemand aangeduid
-                        </span>
-                      )}
-                    </div>
-                    {allSpelers.length === 0 ? (
-                      <span className="text-xs text-muted/50 font-barlow italic">Geen spelers in dit team</span>
-                    ) : (
-                      <div className="flex flex-wrap gap-1.5">
-                        {allSpelers.map(({ naam, isLeiding }) => {
-                          const on = selected.includes(naam)
-                          const disabled = challenge.type === 'junioren' && isLeiding
-                          return (
-                            <button
-                              key={naam}
-                              onClick={() => !disabled && togglePlayer(teamId, naam)}
-                              disabled={disabled}
-                              title={disabled ? 'Alleen aspis voor junioren challenges' : undefined}
-                              className={`flex items-center gap-1 text-xs font-barlow-condensed font-semibold px-2.5 py-1.5 rounded-full border transition-all ${
-                                disabled
-                                  ? 'opacity-30 cursor-not-allowed bg-card-2 border-line text-muted'
-                                  : on
-                                    ? isLeiding
-                                      ? 'bg-yellow/15 border-yellow/50 text-yellow'
-                                      : 'bg-blue-500/15 border-blue-500/40 text-blue-300'
-                                    : 'bg-card-2 border-line text-muted hover:border-yellow/30 hover:text-white'
-                              }`}
-                            >
-                              {isLeiding ? '👑' : '🚴'} {naam}
-                            </button>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </div>
+                  <PlayerPicker challenge={challenge} team={team} selectedSpelers={selected} onToggle={(naam) => togglePlayer(teamId, naam)} />
                 </div>
               )
             })}
           </div>
+
+          {isPassFail && (
+            <>
+              <div className="font-barlow-condensed font-bold text-[11px] uppercase tracking-wider text-muted mb-2">
+                ❌ Niet geslaagd
+              </div>
+              <div className="space-y-3 mb-5">
+                {failedIds.length === 0 && (
+                  <p className="text-sm text-muted font-barlow italic">Nog geen teams hier geplaatst</p>
+                )}
+                {failedIds.map(teamId => {
+                  const team     = teams.find(t => t.id === teamId)
+                  const selected = playerSelections[teamId] ?? []
+                  return (
+                    <div key={teamId} className={`${cardCls} p-4 opacity-75`}>
+                      <div className="flex items-center gap-3">
+                        <div className="w-4 h-4 rounded-full shrink-0" style={{ background: team?.kleur }} />
+                        <span className="flex-1 font-barlow-condensed font-semibold text-white">{team?.naam}</span>
+                        <span className="font-bebas text-xl text-muted">0 pts</span>
+                        <button onClick={() => markPassed(teamId)}
+                          className="px-2.5 py-1.5 rounded-lg text-[10px] font-barlow-condensed font-bold uppercase tracking-wide border bg-card-2 text-muted border-line hover:border-green-500/40 hover:text-green-400 transition-colors">
+                          ✅ Geslaagd
+                        </button>
+                      </div>
+
+                      <PlayerPicker challenge={challenge} team={team} selectedSpelers={selected} onToggle={(naam) => togglePlayer(teamId, naam)} />
+                    </div>
+                  )
+                })}
+              </div>
+            </>
+          )}
 
           <button onClick={handleSave}
             className={`w-full font-bebas text-2xl py-4 rounded-xl transition-all flex items-center justify-center gap-2 border ${
