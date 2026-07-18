@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react'
-import { recalculateAllPoints } from '../utils/points'
+import { recalculateAllPoints, buildChallengeResults } from '../utils/points'
 
 const AppContext = createContext(null)
 
@@ -115,17 +115,17 @@ export function AppProvider({ children }) {
   const updateChallenge = (id, updates) => setChallenges(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c))
   const deleteChallenge = (id) => setChallenges(prev => prev.filter(c => c.id !== id))
 
-  const setResults = (challengeId, orderedTeamIds, playerSelections = {}) => {
+  const setResults = (challengeId, orderedTeamIds, playerSelections = {}, failedTeamIds = []) => {
     const challenge = challenges.find(c => c.id === challengeId)
     if (!challenge) return
-    const results = orderedTeamIds.map((teamId, index) => ({
-      team_id: teamId,
-      positie: index + 1,
-      punten: challenge.power_stage
-        ? Math.max(0, (teams.length - 1 - index) * 2)
-        : Math.max(0, teams.length - 1 - index),
-      spelers: playerSelections[teamId] ?? [],
-    }))
+    const results = buildChallengeResults(
+      orderedTeamIds,
+      playerSelections,
+      teams.length,
+      challenge.power_stage,
+      challenge.result_mode ?? 'ranking',
+      failedTeamIds,
+    )
     const updatedChallenges = challenges.map(c => c.id === challengeId ? { ...c, results, completed: true } : c)
     setChallenges(updatedChallenges)
     setTeams(recalculateAllPoints(teams, updatedChallenges, bonusPenalties, quiz, config.quiz_points_per_question))

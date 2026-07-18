@@ -63,3 +63,27 @@ export function calcResultPoints(index, totalTeams, isPowerStage) {
   const base = Math.max(0, totalTeams - 1 - index)
   return isPowerStage ? base * 2 : base
 }
+
+export function buildChallengeResults(orderedTeamIds, playerSelections, totalTeams, isPowerStage, resultMode = 'ranking', failedTeamIds = []) {
+  const isPassFail = resultMode === 'pass_fail'
+
+  const passed = orderedTeamIds.map((teamId, index) => ({
+    team_id: teamId,
+    positie: index + 1,
+    punten: calcResultPoints(index, totalTeams, isPowerStage),
+    spelers: playerSelections[teamId] ?? [],
+    ...(isPassFail ? { geslaagd: true } : {}),
+  }))
+
+  if (!isPassFail) return passed
+
+  const failed = failedTeamIds.map((teamId, index) => ({
+    team_id: teamId,
+    positie: orderedTeamIds.length + index + 1,
+    punten: 0,
+    spelers: playerSelections[teamId] ?? [],
+    geslaagd: false,
+  }))
+
+  return [...passed, ...failed]
+}
