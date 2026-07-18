@@ -51,14 +51,18 @@ export default function ChallengeCard({ challenge }) {
             {[...challenge.results]
               .sort((a, b) => a.positie - b.positie)
               .map((result, idx) => {
-                const team = teams.find(t => t.id === result.team_id)
+                const team   = teams.find(t => t.id === result.team_id)
+                const failed = result.geslaagd === false
                 return (
                   <tr key={result.team_id} className={idx % 2 === 1 ? 'bg-card-2/50' : ''}>
-                    <td className="py-1.5 pr-3 font-barlow-condensed font-semibold text-muted">{result.positie}</td>
+                    <td className="py-1.5 pr-3 font-barlow-condensed font-semibold text-muted">
+                      {failed ? '❌' : result.positie}
+                    </td>
                     <td className="py-1.5 font-barlow-condensed font-semibold text-white">
                       <span className="inline-flex items-center gap-2">
                         <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: team?.kleur }} />
                         {team?.naam || 'Onbekend'}
+                        {failed && <span className="text-muted text-xs font-barlow italic">(niet geslaagd)</span>}
                       </span>
                     </td>
                     <td className="py-1.5 text-right font-bebas text-xl text-yellow">{result.punten}</td>
