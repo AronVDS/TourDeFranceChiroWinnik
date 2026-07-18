@@ -501,12 +501,12 @@ function ChallengesTab() {
   const { challenges, addChallenge, updateChallenge, deleteChallenge } = useApp()
   const [stageFilter, setStageFilter] = useState(1)
   const [editing, setEditing] = useState(null)
-  const [form, setForm] = useState({ naam: '', stage_number: 1, type: 'general', power_stage: false, notes: '' })
+  const [form, setForm] = useState({ naam: '', stage_number: 1, type: 'general', power_stage: false, result_mode: 'ranking', notes: '' })
 
   const filtered = challenges.filter(c => c.stage_number === stageFilter)
 
-  const startNew = () => { setEditing('new'); setForm({ naam: '', stage_number: stageFilter, type: 'general', power_stage: false, notes: '' }) }
-  const startEdit = (c) => { setEditing(c.id); setForm({ naam: c.naam, stage_number: c.stage_number, type: c.type, power_stage: c.power_stage, notes: c.notes }) }
+  const startNew = () => { setEditing('new'); setForm({ naam: '', stage_number: stageFilter, type: 'general', power_stage: false, result_mode: 'ranking', notes: '' }) }
+  const startEdit = (c) => { setEditing(c.id); setForm({ naam: c.naam, stage_number: c.stage_number, type: c.type, power_stage: c.power_stage, result_mode: c.result_mode ?? 'ranking', notes: c.notes }) }
   const save = () => {
     if (!form.naam.trim()) return
     if (editing === 'new') addChallenge({ ...form, naam: form.naam.trim() })
@@ -566,6 +566,23 @@ function ChallengesTab() {
                     form.power_stage ? 'bg-yellow text-black border-yellow' : 'bg-card-2 border-line text-muted hover:border-yellow/40'
                   }`}>
                   {form.power_stage ? '⚡ AAN' : 'UIT'}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className={labelCls}>Resultaat-modus</label>
+              <div className="grid grid-cols-2 gap-3">
+                <button onClick={() => setForm(p => ({ ...p, result_mode: 'ranking' }))}
+                  className={`py-2.5 rounded-lg font-barlow-condensed font-bold text-sm border transition-all ${
+                    form.result_mode === 'ranking' ? 'bg-yellow text-black border-yellow' : 'bg-card-2 border-line text-muted hover:border-yellow/40'
+                  }`}>
+                  🏆 Klassement
+                </button>
+                <button onClick={() => setForm(p => ({ ...p, result_mode: 'pass_fail' }))}
+                  className={`py-2.5 rounded-lg font-barlow-condensed font-bold text-sm border transition-all ${
+                    form.result_mode === 'pass_fail' ? 'bg-yellow text-black border-yellow' : 'bg-card-2 border-line text-muted hover:border-yellow/40'
+                  }`}>
+                  ✅ Geslaagd/Niet geslaagd
                 </button>
               </div>
             </div>
